@@ -1,0 +1,108 @@
+<html>
+
+<head>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <!-- <script src="dash/jquery.min.js"></script> -->
+  <!-- <script src="dash/video.js"></script> -->
+  <script src="https://unpkg.com/video.js/dist/video.js"></script>
+  <!-- <script src="dash/dash.all.debug.js"></script> -->
+  <!-- <script src="//cdn.dashjs.org/latest/dash.all.debug.js"></script> -->
+  <!-- <script src="dash/videojs-dash.js"></script> -->
+  <script src="https://unpkg.com/videojs-contrib-dash/dist/videojs-dash.js"></script>
+  <script src="http://admin.kumarsunil.com.np/cdn/dashplayer.js"></script>
+  <!-- <link href="dash/video-js.css" rel="stylesheet"> -->
+  <link href="https://unpkg.com/video.js/dist/video-js.css" rel="stylesheet">
+  <link href="http://admin.kumarsunil.com.np/cdn/rc.css" rel="stylesheet">
+
+</head>
+
+
+<body onload='loadHandler()'>
+  <div class="vidoe-block">
+    <video id="player" onplay='handlerresume()' onpause='handlerPause()' width=1000 height=500
+      class="video-js vjs-default-skin" playsinline controls>
+    </video>
+    <div id='menu' class="vertical-menu-hide">
+      <div class="container">
+
+      </div>
+    </div>
+  </div>
+
+  <form id="url-form" action="" method="post" style="margin-top: 10px;">
+    <input id="url" type="url" name="url">
+    <input type="submit" value="Submit">
+  </form>
+
+
+  <script>
+    var rc_data;
+    var asset_id = 0;
+    var rc_url;
+
+    function populateRCview(frame_actors) {
+      all_actors = rc_data['actors']
+      frame_actors.forEach(function (actor_index, index) {
+        actor = all_actors[actor_index]
+        $("#menu").append("<div class='container'><img class='celeb-thumb' src='" + actor['image_url'] +
+          "'/><div class='celeb-title'>" + actor['name'] +
+          "</div><div class='celeb-subtitle'>Cast name</div></div>"
+        )
+      });
+    }
+
+    function handlerPause() {
+      $("#menu").empty();
+      var curTime = Math.round(player.currentTime()).toString();
+      document.getElementById("menu").className = "vertical-menu-show";
+      if (rc_data != null) {
+        if (rc_data['rc'] && rc_data['rc'][curTime]) {
+          populateRCview(rc_data['rc'][curTime])
+        }
+      }
+    }
+
+    function handlerresume() {
+      document.getElementById("menu").className = "vertical-menu-hide";
+    }
+
+    function loadHandler() {
+      let searchParams = new URLSearchParams(window.location.search)
+      if (searchParams.has('asset_id')) {
+        asset_id = searchParams.get('asset_id')
+      }
+      $.ajax({
+        url: 'http://54.83.198.61/get_url',
+        type: 'post',
+        dataType: 'json',
+        contentType: 'application/json',
+        success: function (data) {
+          rc_url = $.parseJSON(data);
+          playUrl(rc_url['sign_url'], 'player');
+        },
+      });
+      $.ajax({
+        url: 'http://54.83.198.61/get_rc',
+        type: 'post',
+        dataType: 'json',
+        contentType: 'application/json',
+        success: function (data) {
+          rc_data = data;
+        },
+        data: JSON.stringify({
+          "asset_id": asset_id.toString()
+        })
+      });
+    }
+  </script>
+  <script>
+    $(document).ready(function () {
+      $('#url-form').submit(function (e) {
+        e.preventDefault();
+        playUrl($('#url').val(), 'player');
+      });
+    });
+  </script>
+</body>
+
+</html>
